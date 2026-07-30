@@ -6,6 +6,8 @@ compiled extension, no `.dlx`.
 Select **Mitsuba** from the menu, press Render, and a progressively refining, physically
 correct image of your scene appears in a window docked to Max.
 
+![Cornell box rendered with Mitsuba](resources/cornell-box.png)
+
 ## How it works
 
 The renderer does **not** run inside Max. Dr.Jit loads its own native DLLs and LLVM/CUDA
