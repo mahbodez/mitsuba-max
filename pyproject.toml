@@ -1,0 +1,71 @@
+[project]
+name = "mitsuba-max"
+version = "0.1.0"
+description = "Mitsuba 3 rendering integration for Autodesk 3ds Max 2027"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.13"
+
+# Only `core` has runtime dependencies that this environment installs.
+# `max_side` needs pymxs + PySide6, both provided by Max.
+# `worker` needs mitsuba, installed into a separate venv at runtime (SPEC.md 2.2).
+dependencies = ["numpy>=2.0"]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.6",
+    "mypy>=1.11",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["core", "max_side", "worker"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = ["error"]
+
+[tool.ruff]
+line-length = 96
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF", "BLE"]
+ignore = [
+    "SIM108",  # ternary is not always clearer than if/else
+    "RUF001",  # docstrings quote physical formulae with unicode operators on purpose
+    "RUF002",
+    "RUF003",
+    # PEP 695 `type X = ...` aliases are lazily-evaluated alias objects rather than the
+    # type itself, which makes them awkward to reference from runtime code. Explicit
+    # `TypeAlias` assignments stay ordinary values.
+    "UP040",
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Probes are read-only scripts run inside Max. They print aligned columns with %-formatting
+# on purpose — an f-string with the same field widths is unreadable — and each query is
+# wrapped in a bare `except` so one failure cannot mask the rest of the probe.
+"tools/probes/*" = ["T201", "E501", "UP031", "BLE001"]
+"tools/maxbatch.py" = ["UP031"]
+
+[tool.mypy]
+python_version = "3.13"
+files = ["core", "worker"]
+strict = true
+warn_unreachable = true
+
+[[tool.mypy.overrides]]
+# Installed only in the worker venv, which is deliberately not this environment.
+module = ["mitsuba.*", "drjit.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+# max_side is checked with a looser profile: pymxs has no type information at all
+# and every `rt.<anything>` is untyped by construction.
+module = ["max_side.*"]
+ignore_missing_imports = true

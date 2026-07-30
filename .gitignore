@@ -1,0 +1,28 @@
+# Build output, probe scratch, golden render results
+build/
+
+# Golden scene assets are regenerated from tests/golden/scenes.py, deterministically.
+# The fixtures are the JSON; the PLY and PNG files are derived and stay out of git.
+tests/golden/assets/
+
+# Development environment for core/ + tests. The worker venv lives in
+# %LOCALAPPDATA%\mitsuba-max\venv and is created at runtime, not here.
+.venv/
+uv.lock
+
+__pycache__/
+*.py[cod]
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+*.part
+
+# Local knowledge-graph cache, regenerated on demand.
+graphify-out/
+
+# Editor and OS noise.
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini

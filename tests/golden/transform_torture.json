@@ -1,0 +1,183 @@
+{
+  "camera": {
+    "aperture_radius_m": null,
+    "exposure_scale": 1.0,
+    "far_clip": 10000.0,
+    "film_height": 150,
+    "film_width": 200,
+    "focus_distance_m": null,
+    "fov_axis": "x",
+    "fov_deg": 60.0,
+    "near_clip": 0.01,
+    "principal_point_offset": [
+      0.0,
+      0.0
+    ],
+    "to_world": [
+      -1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.9995677544643531,
+      -0.02939905160189274,
+      0.05,
+      -0.0,
+      -0.02939905160189274,
+      -0.9995677544643531,
+      1.7,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ]
+  },
+  "environment": null,
+  "ir_version": 1,
+  "lights": [],
+  "materials": [
+    {
+      "emission": {
+        "efficacy_lm_per_w": null,
+        "radiance_rgb": [
+          8.0,
+          8.0,
+          8.0
+        ],
+        "source_luminance_cd_m2": null
+      },
+      "id": "emissive",
+      "kind": "principled",
+      "name": "Marker",
+      "normal_map": null,
+      "params": {
+        "base_color": {
+          "k": "rgb",
+          "v": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "roughness": {
+          "k": "float",
+          "v": 1.0
+        }
+      },
+      "two_sided": true
+    }
+  ],
+  "meshes": [
+    {
+      "flip_normals": false,
+      "id": "plain",
+      "material_id": "emissive",
+      "name": "Torture_plain",
+      "positions_path": "meshes/e18525e37679714a.ply",
+      "to_world": [
+        6.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        6.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        6.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "flip_normals": false,
+      "id": "offset_rotated",
+      "material_id": "emissive",
+      "name": "Torture_offset_rotated",
+      "positions_path": "meshes/e18525e37679714a.ply",
+      "to_world": [
+        4.914912265733951,
+        0.0,
+        3.4414586181062763,
+        0.6,
+        0.0,
+        6.0,
+        0.0,
+        0.2,
+        -3.4414586181062763,
+        0.0,
+        4.914912265733951,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "flip_normals": false,
+      "id": "nonuniform",
+      "material_id": "emissive",
+      "name": "Torture_nonuniform",
+      "positions_path": "meshes/e18525e37679714a.ply",
+      "to_world": [
+        10.875693444439799,
+        2.5357095704441965,
+        0.0,
+        -0.6,
+        -5.071419140888393,
+        5.437846722219899,
+        0.0,
+        0.2,
+        0.0,
+        0.0,
+        3.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "flip_normals": false,
+      "id": "mirrored",
+      "material_id": "emissive",
+      "name": "Torture_mirrored",
+      "positions_path": "meshes/e18525e37679714a.ply",
+      "to_world": [
+        -6.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        4.596266658713868,
+        -3.8567256581192355,
+        -0.45,
+        0.0,
+        3.8567256581192355,
+        4.596266658713868,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    }
+  ],
+  "scene_scale_to_meters": 0.01,
+  "settings": {
+    "hide_emitters": false,
+    "integrator": "path",
+    "max_depth": 2,
+    "passes": 2,
+    "rr_depth": 5,
+    "seed": 0,
+    "spp_per_pass": 32
+  },
+  "warnings": []
+}

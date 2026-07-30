@@ -1,0 +1,12 @@
+# Normalize to LF in the repository; check out native on Windows.
+* text=auto
+
+*.py text eol=lf
+*.md text eol=lf
+*.toml text eol=lf
+*.json text eol=lf
+
+*.max binary
+*.exr binary
+*.ply binary
+*.png binary

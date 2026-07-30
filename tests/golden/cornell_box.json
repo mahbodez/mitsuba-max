@@ -1,0 +1,333 @@
+{
+  "camera": {
+    "aperture_radius_m": null,
+    "exposure_scale": 1.0,
+    "far_clip": 100.0,
+    "film_height": 128,
+    "film_width": 128,
+    "focus_distance_m": null,
+    "fov_axis": "smaller",
+    "fov_deg": 39.3077,
+    "near_clip": 0.001,
+    "principal_point_offset": [
+      0.0,
+      0.0
+    ],
+    "to_world": [
+      -1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      -1.0,
+      3.9,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ]
+  },
+  "environment": null,
+  "ir_version": 1,
+  "lights": [],
+  "materials": [
+    {
+      "emission": null,
+      "id": "white",
+      "kind": "diffuse_placeholder",
+      "name": "White",
+      "normal_map": null,
+      "params": {
+        "reflectance": {
+          "k": "rgb",
+          "v": [
+            0.885809,
+            0.698859,
+            0.666422
+          ]
+        }
+      },
+      "two_sided": true
+    },
+    {
+      "emission": null,
+      "id": "green",
+      "kind": "diffuse_placeholder",
+      "name": "Green",
+      "normal_map": null,
+      "params": {
+        "reflectance": {
+          "k": "rgb",
+          "v": [
+            0.105421,
+            0.37798,
+            0.076425
+          ]
+        }
+      },
+      "two_sided": true
+    },
+    {
+      "emission": null,
+      "id": "red",
+      "kind": "diffuse_placeholder",
+      "name": "Red",
+      "normal_map": null,
+      "params": {
+        "reflectance": {
+          "k": "rgb",
+          "v": [
+            0.570068,
+            0.0430135,
+            0.0443706
+          ]
+        }
+      },
+      "two_sided": true
+    },
+    {
+      "emission": {
+        "efficacy_lm_per_w": null,
+        "radiance_rgb": [
+          18.387,
+          13.9873,
+          6.75357
+        ],
+        "source_luminance_cd_m2": null
+      },
+      "id": "emissive",
+      "kind": "diffuse_placeholder",
+      "name": "Light",
+      "normal_map": null,
+      "params": {
+        "reflectance": {
+          "k": "rgb",
+          "v": [
+            0.885809,
+            0.698859,
+            0.666422
+          ]
+        }
+      },
+      "two_sided": true
+    }
+  ],
+  "meshes": [
+    {
+      "flip_normals": false,
+      "id": "floor",
+      "material_id": "white",
+      "name": "Cornell_floor",
+      "positions_path": "meshes/6c68a3e3c3700548.ply",
+      "to_world": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        -1.0,
+        0.0,
+        -1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "flip_normals": false,
+      "id": "ceiling",
+      "material_id": "white",
+      "name": "Cornell_ceiling",
+      "positions_path": "meshes/6c68a3e3c3700548.ply",
+      "to_world": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        -1.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "flip_normals": false,
+      "id": "back",
+      "material_id": "white",
+      "name": "Cornell_back",
+      "positions_path": "meshes/6c68a3e3c3700548.ply",
+      "to_world": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        -1.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "flip_normals": false,
+      "id": "green_wall",
+      "material_id": "green",
+      "name": "Cornell_green_wall",
+      "positions_path": "meshes/6c68a3e3c3700548.ply",
+      "to_world": [
+        0.0,
+        0.0,
+        -1.0,
+        1.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "flip_normals": false,
+      "id": "red_wall",
+      "material_id": "red",
+      "name": "Cornell_red_wall",
+      "positions_path": "meshes/6c68a3e3c3700548.ply",
+      "to_world": [
+        0.0,
+        0.0,
+        1.0,
+        -1.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        -1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "flip_normals": false,
+      "id": "light",
+      "material_id": "emissive",
+      "name": "Cornell_light",
+      "positions_path": "meshes/6c68a3e3c3700548.ply",
+      "to_world": [
+        0.23,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        -0.19,
+        0.99,
+        0.0,
+        0.19,
+        0.0,
+        0.01,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "flip_normals": false,
+      "id": "small_box",
+      "material_id": "white",
+      "name": "Cornell_small_box",
+      "positions_path": "meshes/b48a6616270ae5a6.ply",
+      "to_world": [
+        0.2869,
+        0.0,
+        -0.0877,
+        0.335,
+        0.0,
+        0.3,
+        0.0,
+        -0.7,
+        0.0877,
+        0.0,
+        0.2869,
+        0.38,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "flip_normals": false,
+      "id": "large_box",
+      "material_id": "white",
+      "name": "Cornell_large_box",
+      "positions_path": "meshes/b48a6616270ae5a6.ply",
+      "to_world": [
+        0.2849,
+        0.0,
+        0.0939,
+        -0.33,
+        0.0,
+        0.61,
+        0.0,
+        -0.4,
+        -0.0939,
+        0.0,
+        0.2849,
+        -0.28,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    }
+  ],
+  "scene_scale_to_meters": 1.0,
+  "settings": {
+    "hide_emitters": false,
+    "integrator": "path",
+    "max_depth": 8,
+    "passes": 4,
+    "rr_depth": 5,
+    "seed": 0,
+    "spp_per_pass": 128
+  },
+  "warnings": []
+}

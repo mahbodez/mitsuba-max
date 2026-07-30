@@ -1,0 +1,106 @@
+{
+  "camera": {
+    "aperture_radius_m": null,
+    "exposure_scale": 1.0,
+    "far_clip": 10000.0,
+    "film_height": 64,
+    "film_width": 64,
+    "focus_distance_m": null,
+    "fov_axis": "x",
+    "fov_deg": 45.0,
+    "near_clip": 0.01,
+    "principal_point_offset": [
+      0.0,
+      0.0
+    ],
+    "to_world": [
+      -1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      -1.0,
+      4.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ]
+  },
+  "environment": {
+    "kind": "constant",
+    "radiance_rgb": [
+      1.0,
+      1.0,
+      1.0
+    ],
+    "scale": 1.0,
+    "texture": null,
+    "to_world": null
+  },
+  "ir_version": 1,
+  "lights": [],
+  "materials": [
+    {
+      "emission": null,
+      "id": "white",
+      "kind": "diffuse_placeholder",
+      "name": "PerfectWhite",
+      "normal_map": null,
+      "params": {
+        "reflectance": {
+          "k": "rgb",
+          "v": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      },
+      "two_sided": true
+    }
+  ],
+  "meshes": [
+    {
+      "flip_normals": false,
+      "id": "sphere",
+      "material_id": "white",
+      "name": "FurnaceSphere",
+      "positions_path": "meshes/a323058910f6c296.ply",
+      "to_world": [
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        1.0
+      ]
+    }
+  ],
+  "scene_scale_to_meters": 1.0,
+  "settings": {
+    "hide_emitters": false,
+    "integrator": "path",
+    "max_depth": 64,
+    "passes": 8,
+    "rr_depth": 64,
+    "seed": 0,
+    "spp_per_pass": 512
+  },
+  "warnings": []
+}
