@@ -122,6 +122,33 @@ uv run mypy core worker
 
 The worker venv is separate and created at runtime by the plugin, not by `uv sync`.
 
+## Version control
+
+Git, `main`, no remote yet. `.gitattributes` normalises to LF in the repository and checks
+out native, so do not "fix" line endings in a diff — a commit that touches every line of a
+file because of CRLF is a review-killer, and the attributes file is what prevents it.
+
+What stays out of the repository, and why the reason matters more than the list:
+
+- `build/`, `__pycache__/`, the tool caches — derived, regenerated on demand.
+- `tests/golden/assets/` — the PLY and PNG files are regenerated deterministically by
+  `tests/golden/regenerate.py`. **The fixtures are the JSON**, and those are checked in.
+  If a golden test ever needs a binary asset committed to pass, the fixture stopped being
+  the source of truth and that is the bug to fix.
+- `.venv/` and the worker venv — one is `uv sync`'s, the other lives in
+  `%LOCALAPPDATA%\mitsuba-max\venv` and is built at runtime. Neither is ever in-tree.
+- `graphify-out/` — a local knowledge-graph cache, rebuilt with `graphify update .`.
+
+`uv.lock` **is** committed. See the note in `.gitignore`.
+
+Nothing under `%LOCALAPPDATA%\mitsuba-max\` is repository state: `settings.json` holds an
+interpreter path that exists only on one machine, which is exactly why it is not in the
+scene file either.
+
+Commit only when the user asks. Run `pytest`, `ruff` and `mypy` before you do — the
+definition of done below is not a separate ceremony, it is what a commit is expected to
+have satisfied.
+
 ## Style
 
 - Python 3.13 syntax floor throughout. Confirmed: Max 2027 embeds CPython 3.13.9
@@ -141,3 +168,13 @@ The worker venv is separate and created at runtime by the plugin, not by `uv syn
 4. `docs/MATERIAL_MAPPING.md` updated if any parameter mapping changed, including the
    exact/approximate/unsupported classification.
 5. No `[PROBE]` tag left unresolved for code that shipped in the milestone.
+
+## graphify
+
+This project has a knowledge graph at graphify-out/ with god nodes, community structure, and cross-file relationships.
+
+Rules:
+- For codebase questions, first run `graphify query "<question>"` when graphify-out/graph.json exists. Use `graphify path "<A>" "<B>"` for relationships and `graphify explain "<concept>"` for focused concepts. These return a scoped subgraph, usually much smaller than GRAPH_REPORT.md or raw grep output.
+- If graphify-out/wiki/index.md exists, use it for broad navigation instead of raw source browsing.
+- Read graphify-out/GRAPH_REPORT.md only for broad architecture review or when query/path/explain do not surface enough context.
+- After modifying code, run `graphify update .` to keep the graph current (AST-only, no API cost).

@@ -7,8 +7,12 @@ tests/golden/assets/
 
 # Development environment for core/ + tests. The worker venv lives in
 # %LOCALAPPDATA%\mitsuba-max\venv and is created at runtime, not here.
+#
+# uv.lock is deliberately NOT ignored: this is an application, not a library, and a
+# pinned dev toolchain is what makes "ruff clean, mypy clean" mean the same thing on
+# two machines. The worker's mitsuba/numpy are not in it — pip installs those at
+# runtime — so the lock covers the test and lint environment only.
 .venv/
-uv.lock
 
 __pycache__/
 *.py[cod]
@@ -20,6 +24,10 @@ __pycache__/
 
 # Local knowledge-graph cache, regenerated on demand.
 graphify-out/
+
+# Per-machine agent config. The graphify hooks in here carry an absolute path to one
+# developer's .local/bin, so this is personal wiring, not project state.
+.claude/
 
 # Editor and OS noise.
 .vscode/
