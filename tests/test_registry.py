@@ -54,6 +54,16 @@ def test_duplicate_registration_raises() -> None:
         def second() -> None: ...
 
 
+def test_identical_re_registration_is_idempotent() -> None:
+    """Re-importing a translator module must not raise when the same handler comes back."""
+    reg: Registry[object] = Registry("light")
+
+    @reg.register("Free_Light")
+    def handler() -> None: ...
+
+    reg.register("Free_Light")(handler)
+    assert reg.lookup("Free_Light") is handler
+
 def test_registration_without_a_class_raises() -> None:
     reg: Registry[object] = Registry("camera")
     with pytest.raises(ValueError, match="at least one Max class"):

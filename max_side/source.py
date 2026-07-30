@@ -85,8 +85,40 @@ class PymxsSource:
         return out
 
     def light_nodes(self) -> list[object]:
-        return [n for n in self._roots()
-                if str(rt.superClassOf(n)) == "light" and not bool(n.isHidden)]
+        """Every non-hidden light in the scene (or selection).
+
+        Uses `rt.lights` for a full-scene walk — that is Max's dedicated light collection —
+        and falls back to an `isKindOf light` scan of `rt.objects` so a light that is somehow
+        absent from `lights` is still found. Selection-only mode intersects with the
+        current selection.
+        """
+        if self.selection_only:
+            selected = set(rt.selection)
+            pool = [n for n in list(rt.lights) if n in selected]
+            # Selection may hold a light that `rt.lights` enumerates differently under
+            # assemblies; include any selected node that is a light.
+            for n in selected:
+                if n not in pool and bool(rt.isKindOf(n, rt.light)):
+                    pool.append(n)
+        else:
+            seen: set[int] = set()
+            pool = []
+            for n in list(rt.lights):
+                handle = int(rt.getHandleByAnim(n))
+                if handle not in seen:
+                    seen.add(handle)
+                    pool.append(n)
+            for n in list(rt.objects):
+                if not bool(rt.isKindOf(n, rt.light)):
+                    continue
+                handle = int(rt.getHandleByAnim(n))
+                if handle not in seen:
+                    seen.add(handle)
+                    pool.append(n)
+        return [n for n in pool
+                if not bool(n.isHidden)
+                and bool(rt.isKindOf(n, rt.light))
+                and str(rt.classOf(n)) != "Targetobject"]
 
     def camera_node(self) -> object | None:
         return rt.getActiveCamera()
@@ -190,10 +222,32 @@ def export_scene(source: SceneSource, root: Path, settings: Settings,
     geometry_elapsed = time.perf_counter() - geometry_started
 
     lights: list[Light] = []
-    for node in source.light_nodes():
+    light_nodes = source.light_nodes()
+    for node in light_nodes:
         translated = translate_light(node, light_ctx)
         if translated is not None:
             lights.append(translated)
+
+    # Always say what the light walk saw. "0 lights" with no further detail is how the
+    # photometric `enabled`-vs-`on` bug hid for so long; a one-line inventory makes the
+    # next silent drop diagnosable from the listener alone.
+    if light_nodes:
+        inventory = ", ".join(
+            f"{n.name}<{rt.classOf(n)}>" for n in light_nodes
+        )
+        print(f"[mitsuba-max] light nodes: {len(light_nodes)} [{inventory}] "
+              f"-> exported {len(lights)}")
+    else:
+        all_lights = list(rt.lights) if hasattr(rt, "lights") else []
+        if all_lights:
+            hidden = ", ".join(
+                f"{n.name}<{rt.classOf(n)} hidden={bool(n.isHidden)}>"
+                for n in all_lights
+            )
+            print(f"[mitsuba-max] light nodes: 0 (rt.lights has {len(all_lights)}: {hidden})")
+        else:
+            print("[mitsuba-max] light nodes: 0 (rt.lights is empty)")
+
 
     camera: Camera = resolve_camera(cam_ctx)
 

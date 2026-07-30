@@ -53,10 +53,11 @@ scene's system units. Warnings are fine — silent substitutions are not, so rea
 
 ### M0-4 · The render window parents to Max
 This is the one thing `3dsmaxbatch` fundamentally cannot verify: batch mode returns a valid
-`getMAXHWND()` (probe 13) but shows nothing, so `shiboken6.wrapInstance` is untested until
-a human looks.
+`getMAXHWND()` (probe 13) but shows nothing, so parenting is untested until a human looks.
 
-**Do:** `w = max_side.render()`.
+**Do:** click **Render with Mitsuba** from the menu (not the Listener). The menu path used
+to discard the window reference and crash Max with "Unknown exception thrown executing
+script"; that is fixed by the keep-alive in `max_side.ui`.
 **Check:** the window appears **in front of** Max, and clicking the Max viewport does not
 send it behind. Minimising Max minimises it too.
 **Paste:** a screenshot, plus the window title (it names the Mitsuba variant).
@@ -189,6 +190,17 @@ Target camera — i.e. three things v1 does not support.
 **Check:** the warnings panel lists all three by node name with a stated reason, the render
 still completes, and unsupported materials appear as 50% grey rather than black or missing.
 **Paste:** the warnings panel contents.
+
+### M4-4 · Render menu action on a numpy-less Max
+**Build:** nothing — any scene with one object and a camera.
+**Do:** from a freshly started Max, run the "Render with Mitsuba" action.
+**Check:** no `ModuleNotFoundError: No module named 'numpy'`. The render window opens.
+**Then:** rename `%LOCALAPPDATA%\mitsuba-max\venv` temporarily and run the action again.
+**Check:** the failure is `NumpyUnavailable` naming the directories tried and telling you to
+run the environment wizard — not a bare import error.
+**Paste:** both outcomes. Rename the venv back afterwards.
+**Why:** Max ships no numpy (probe 06c), so `core.film` only imports once the bridge has
+been armed. This is the check that the arming happens before, not after, that import.
 
 ---
 

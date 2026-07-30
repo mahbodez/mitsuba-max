@@ -588,14 +588,18 @@ Parent a PySide6 window to Max rather than creating a floating orphan:
 import shiboken6
 from PySide6 import QtWidgets
 from pymxs import runtime as rt
-max_win = shiboken6.wrapInstance(int(rt.windows.getMAXHWND()), QtWidgets.QWidget)
+hwnd = int(rt.windows.getMAXHWND())
+found = QtWidgets.QWidget.find(hwnd)
+max_win = shiboken6.wrapInstance(shiboken6.getCppPointer(found)[0], QtWidgets.QMainWindow)
 ```
 
-**Confirmed by probe 01b:** PySide6 6.8.3, `shiboken6` importable under that name,
-`rt.windows.getMAXHWND()` returns a valid integer handle. `rt.GetQMaxMainWindow()` does
-**not** exist and must not be used — it was a MaxPlus-era API. The `wrapInstance` call
-itself still needs a live check, which `3dsmaxbatch` cannot provide (no UI in batch mode),
-so it stays on the manual checklist.
+**Confirmed by probe 01b (corrected):** PySide6 6.8.3, `shiboken6` importable under that
+name, `rt.windows.getMAXHWND()` returns a valid integer handle. `rt.GetQMaxMainWindow()`
+does **not** exist (MaxPlus-era). Do **not** `wrapInstance(int(hwnd), QWidget)` — an HWND
+is not a `QWidget*` and native-crashes Max. Do **not** `import qtmax` solely to call its
+helper either: that import can leave a partially initialised module when triggered from a
+macroscript. Inline the two-step above (what Autodesk's `qtmax.GetQMaxMainWindow` does).
+Parenting still needs a live check on the manual checklist (`3dsmaxbatch` has no UI).
 
 Poll the worker on a `QTimer` at ~10 Hz. Never block.
 
@@ -707,7 +711,7 @@ and the Max build for each.
 | 07 | Full PhysicalMaterial property dump | §9 |
 | 08 | `twosided`/`normalmap` nesting order | §9 |
 | 09 | Bitmap gamma override property; UV V direction | §9 |
-| 10 | Qt bridge | **RESOLVED** — PySide6 6.8.3, `getMAXHWND` ok, no `GetQMaxMainWindow` |
+| 10 | Qt bridge | **RESOLVED** — PySide6 6.8.3; parent via `QWidget.find(hwnd)` + wrap; never wrap HWND directly; never import `qtmax` from the macroscript path |
 | 11 | `getHandleByAnim` on base objects | M5 |
 | 12 | venv creation from Max's `python.exe` | §2.2 |
 | 13 | `3dsmaxbatch.exe` present, licence behaviour | agent autonomy |

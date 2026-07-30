@@ -76,10 +76,15 @@ active camera classOf:    'Physical'
 **Conclusions — Qt (resolves probe 10)**
 
 - PySide6 **6.8.3**, `shiboken6` importable under that name.
-- Use `shiboken6.wrapInstance(int(rt.windows.getMAXHWND()), QtWidgets.QWidget)`.
-  `rt.GetQMaxMainWindow()` does **not** exist — MaxPlus-era API.
-- The `wrapInstance` call itself cannot be verified headlessly and stays on the manual
-  checklist (`docs/MANUAL_CHECKS.md`, M0-4).
+- `rt.GetQMaxMainWindow()` does **not** exist — MaxPlus-era API. That is not the same as
+  `qtmax.GetQMaxMainWindow()`, which *does* exist in Max's `site-packages/qtmax`.
+- **Do not** `wrapInstance(int(hwnd), QWidget)`. An `HWND` is not a `QWidget*`; that
+  native-crashes Max as "Unknown exception thrown executing script" with no traceback.
+  Autodesk's own helper does `QWidget.find(hwnd)` then
+  `wrapInstance(getCppPointer(...)[0], QMainWindow)`. `max_side.ui.max_main_window`
+  inlines that — do not `import qtmax` to call it: loading `max_side.ui` from the render
+  macroscript left `qtmax` partially initialised (`GetQMaxMainWindow` missing).
+- Parenting cannot be verified headlessly and stays on the manual checklist (M0-4).
 
 ---
 
@@ -250,6 +255,44 @@ known (candela, matching Max's documented default photometric light of 1500 cd) 
 node and stating that the unit or distribution could not be identified, and the light is
 converted as if it were the default. This is **probe 03c, still open** — resolving it needs
 either the SDK enum headers or a render-based calibration.
+
+### On/off is `on`, not `enabled` — RESOLVED (probe 03d)
+
+`Free_Light` / `Target_Light` expose both `on` and `enabled`. Defaults on a freshly created
+photometric light:
+
+```
+on:       True
+enabled:  False
+```
+
+`enabled` is therefore **not** the power switch. An earlier `translate_light` guard that
+skipped when `not node.enabled` silently dropped every photometric light, producing
+`EmitError: scene has no lights…` on a scene that clearly had them. Standard lights
+(`Omnilight`) happen to default `enabled=True`, which is why the bug only hit the
+Create-panel default photometric path.
+
+`translate_light` now keys off `node.on` alone. `Sun_Positioner` (also `superClassOf light`,
+no `on` attribute, `enabled=False`) remains unsupported in v1 and is skipped with a
+warning naming the class.
+
+### Photometric shape classes — RESOLVED (probe 03g)
+
+Max 2027's Create panel does not stick to `Free_Light` / `Target_Light`. Choosing an
+emitter shape switches `classOf` to a dedicated class that still carries the same
+photometric properties (`intensity`, `intensityType`, `distribution`, `rgbFilter`, …):
+
+| Shape | Free class | Target class |
+|-------|------------|--------------|
+| Point | `Free_Light` (`rt.Free_Point` constructs as this) | `Target_Light` |
+| Sphere | `Free_Sphere` | `Target_Sphere` |
+| Disc | `Free_Disc` | `Target_Disc` |
+| Area (rectangle) | `Free_Area` | `Target_Area` |
+| Cylinder | `Free_Cylinder` | `Target_Cylinder` |
+
+`max_side.lights.translate_photometric` registers all ten. v1 approximates non-point shapes
+as point/spot emitters and warns that `light_Width` / `light_length` / `light_Radius` were
+ignored. Light targets (`Targetobject`) are excluded from the light walk.
 
 ### Cone angles
 

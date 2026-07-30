@@ -2,15 +2,29 @@
 
 Parented, not floating. An orphan top-level window disappears behind Max the first time the
 user clicks the viewport, and on Windows it will not be restored with the application.
-Probe 01b confirmed the bridge: PySide6 6.8.3, `shiboken6` importable under that name, and
-`rt.windows.getMAXHWND()` returning a valid handle. `rt.GetQMaxMainWindow()` does **not**
-exist — it was a MaxPlus-era API — so anything suggesting it is out of date.
+
+Parenting is the Autodesk two-step from Max's own `qtmax.GetQMaxMainWindow` source:
+
+1. `QWidget.find(hwnd)` — the widget Qt already owns for Max's main-window handle
+2. `shiboken6.wrapInstance(getCppPointer(...)[0], QMainWindow)` — re-wrap as QMainWindow
+
+Probe 01b concluded `wrapInstance(int(hwnd), QWidget)` was the replacement for the missing
+MAXScript `rt.GetQMaxMainWindow()`. **That conclusion was wrong**, and it cost a native
+crash: `wrapInstance` takes a pointer to a C++ `QWidget`, and an `HWND` is not one.
+Handing it a window handle reinterprets an unrelated integer as an object pointer, and Max
+reports the result as "Unknown exception thrown executing script" with no Python traceback.
+
+We do **not** `import qtmax` to call that helper. Loading `max_side.ui` from a macroscript
+leaves `qtmax` partially initialised in `sys.modules` (`GetQMaxMainWindow` missing, with
+Python blaming a circular import). The two-step above is the whole implementation; inlining
+it removes the dependency.
 
 Nothing here blocks. The worker is polled on a `QTimer` at 10 Hz; every read of the shared
 film is allowed to come back empty, and the correct response is to skip the repaint and try
 again in 100 ms.
 """
 
+import sys
 import time
 from pathlib import Path
 
@@ -19,21 +33,74 @@ from pymxs import runtime as rt
 from PySide6 import QtCore, QtGui, QtWidgets
 
 from core import protocol as p
+from core.emit_dict import EmitError
 from core.emit_xml import scene_to_xml
 from core.ir import Scene
 from max_side.client import WorkerClient, WorkerCrashed
 from max_side.numpy_bridge import ensure_numpy
 from max_side.settings import Settings, save
 
-__all__ = ["RenderWindow", "max_main_window"]
+__all__ = ["RenderWindow", "max_main_window", "release", "retain"]
+
+# A failed or circular `import qtmax` leaves a stub in sys.modules that poisons every
+# later import in the same Max session. We no longer import it, but clear a broken stub so
+# Max's own callers can recover without a restart.
+_qtmax = sys.modules.get("qtmax")
+if _qtmax is not None and not hasattr(_qtmax, "GetQMaxMainWindow"):
+    for _name in [n for n in sys.modules if n == "qtmax" or n.startswith("qtmax.")]:
+        del sys.modules[_name]
+del _qtmax
 
 POLL_MS = 100
 """10 Hz. Fast enough that Cancel feels instant, slow enough to cost nothing."""
 
+_active: "RenderWindow | None" = None
+"""Strong reference to the live dialog.
+
+The macroscript runs `python.execute "… max_side.render()"` and discards the return
+value. Without this, CPython collects the `RenderWindow` the moment `render()` returns —
+while Qt still owns the C++ dialog and its `QTimer` — and Max reports that as
+"Unknown exception thrown executing script" with no Python traceback. The Listener form
+`w = max_side.render()` happens to keep a reference; the menu button does not.
+"""
+
+
+def retain(window: "RenderWindow") -> "RenderWindow":
+    """Keep `window` alive after the caller returns. Closes any previous dialog."""
+    global _active
+    if _active is not None and _active is not window:
+        _active.close()
+    _active = window
+    return window
+
+
+def release(window: "RenderWindow | None" = None) -> None:
+    """Drop the keep-alive. Pass a window to release only that one; omit to clear any."""
+    global _active
+    if window is None or _active is window:
+        _active = None
+
 
 def max_main_window() -> QtWidgets.QWidget:
-    """Max's main window as a `QWidget`, for use as a parent."""
-    return shiboken6.wrapInstance(int(rt.windows.getMAXHWND()), QtWidgets.QWidget)
+    """Max's main window as a `QMainWindow`, for use as a parent.
+
+    Inlines the body of Autodesk's `qtmax.GetQMaxMainWindow` — see the module docstring
+    for why we do not call that function through an `import qtmax`.
+
+    Raises rather than returning `None`: a dialog parented to nothing is a window that
+    vanishes behind Max and never comes back with it, which is worse than a clear failure.
+    """
+    hwnd = int(rt.windows.getMAXHWND())
+    found = QtWidgets.QWidget.find(hwnd)
+    if found is None:
+        raise RuntimeError(
+            "QWidget.find(getMAXHWND()) returned None — Qt has no widget for Max's main "
+            "window handle. This should not happen in an interactive session; it does in "
+            "batch mode, which has no UI."
+        )
+    return shiboken6.wrapInstance(
+        shiboken6.getCppPointer(found)[0], QtWidgets.QMainWindow
+    )
 
 
 class ImageView(QtWidgets.QScrollArea):
@@ -231,7 +298,7 @@ class RenderWindow(QtWidgets.QDialog):
         try:
             self._job = self._client.submit(scene, film_path=film_path,
                                             scene_root=scene_root)
-        except WorkerCrashed as exc:
+        except (WorkerCrashed, EmitError) as exc:
             self._fail(str(exc))
 
     def _show_warnings(self, scene: Scene) -> None:
@@ -379,4 +446,5 @@ class RenderWindow(QtWidgets.QDialog):
         self._settings.exposure = self._slider_value(self._exposure)
         self._settings.gamma = self._slider_value(self._gamma)
         save(self._settings)
+        release(self)
         super().closeEvent(event)

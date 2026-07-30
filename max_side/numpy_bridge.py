@@ -78,17 +78,26 @@ class _VendorFinder(importlib.abc.MetaPathFinder):
 
 
 def install_blocker() -> None:
-    """Install the mitsuba/drjit blocker. Idempotent, and safe to call from a reload."""
-    if not any(isinstance(f, _MitsubaBlocker) for f in sys.meta_path):
+    """Install the mitsuba/drjit blocker. Idempotent, and safe to call from a reload.
+
+    Identity is checked by class *name*, not `isinstance`: `devreload.purge()` drops this
+    module from `sys.modules`, so the blocker already on `sys.meta_path` is an instance of
+    the previous incarnation of the class and fails `isinstance` against the new one. Left
+    that way, every reload stacks another finder in front of the import system.
+    """
+    if not any(type(f).__name__ == "_MitsubaBlocker" for f in sys.meta_path):
         sys.meta_path.insert(0, _MitsubaBlocker())
 
 
 def _candidate_site_packages(venv_python: Path | None) -> list[Path]:
+    from max_side.env_setup import managed_venv_python
+
     out: list[Path] = []
     if venv_python is not None:
         out.append(venv_python.parent.parent / "Lib" / "site-packages")
-    out.append(Path.home() / "AppData" / "Local" / "mitsuba-max" / "venv" / "Lib"
-               / "site-packages")
+    managed = managed_venv_python().parent.parent / "Lib" / "site-packages"
+    if managed not in out:
+        out.append(managed)
     return out
 
 

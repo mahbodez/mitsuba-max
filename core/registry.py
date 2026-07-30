@@ -40,9 +40,14 @@ class Registry[T]:
             for name in max_classes:
                 key = name.lower()
                 if key in self._by_class:
-                    existing = getattr(self._by_class[key], "__name__", self._by_class[key])
+                    existing = self._by_class[key]
+                    # Idempotent: re-importing a translator module after a partial reload
+                    # must not raise when the same handler re-registers the same class.
+                    if existing is handler:
+                        continue
+                    existing_name = getattr(existing, "__name__", existing)
                     raise ValueError(
-                        f"{self.kind} class {name!r} is already handled by {existing!r}"
+                        f"{self.kind} class {name!r} is already handled by {existing_name!r}"
                     )
                 self._by_class[key] = handler
             return handler

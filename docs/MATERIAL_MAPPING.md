@@ -113,6 +113,7 @@ together with an X negation so the basis stays right-handed.
 | Max | Mitsuba | Class | Notes |
 |---|---|---|---|
 | `Free_Light`, `Target_Light` — `intensity` | `point.intensity` | approximate | `I_e = I_v / η`, η default 250 lm/W. Approximate only in η, which stands in for a spectral integral an RGB renderer cannot evaluate. **This is the supported path**: the value is real candela. |
+| `Free_Area` / `Target_Area` / `Free_Disc` / `Target_Disc` / `Free_Sphere` / `Target_Sphere` / `Free_Cylinder` / `Target_Cylinder` — `intensity` | `point.intensity` | approximate | Same candela path as `Free_Light` (probe 03g: identical photometric properties). Emitter extent is **ignored in v1** and warned; the light is exported as a point/spot. |
 | `intensityType` | — | **unresolved** | A plain integer whose enum probe 03b could not identify (assigning a `Name` maps every name, including nonsense, to the same integer). Only the default `1` is treated as known — candela, matching Max's documented 1500 cd default. Anything else converts as candela **and warns**. Probe 03c. |
 | `distribution` | — | **unresolved** | Same. Only `0` (isotropic) is treated as known. |
 | `webFile` | — | unsupported | Photometric webs warn and fall back to isotropic. |

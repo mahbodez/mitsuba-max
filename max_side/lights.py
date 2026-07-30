@@ -31,7 +31,11 @@ from core.units import (
     spot_angles,
 )
 
-__all__ = ["LightContext", "translate_light"]
+__all__ = ["LIGHT_GUARD", "LightContext", "translate_light"]
+
+# Stamp printed at export so a Max session running a stale in-memory `lights.py` is
+# obvious. After probe 03d the power switch is `on` only — never `enabled`.
+LIGHT_GUARD = "on-only-03d"
 
 INTENSITY_TYPE_CANDELA = 1
 """The only `intensityType` value probe 03b could confirm. See the module docstring."""
@@ -190,17 +194,35 @@ def translate_directional(node, ctx: LightContext) -> Light | None:
 # --------------------------------------------------------------------------------------
 
 
-@light("Free_Light", "Target_Light")
+@light(
+    "Free_Light", "Target_Light",       # point (Create-panel default / Free_Point)
+    "Free_Sphere", "Target_Sphere",
+    "Free_Disc", "Target_Disc",
+    "Free_Area", "Target_Area",
+    "Free_Cylinder", "Target_Cylinder",
+)
 def translate_photometric(node, ctx: LightContext) -> Light | None:
     """Photometric light → `point` or `spot`, with a real candela → W/sr conversion.
 
     This is the supported path, because `intensity` is a genuine photometric quantity
     rather than a unitless multiplier. `I_e = I_v / eta`, and the provenance is recorded on
     the IR node so the UI can show its working.
+
+    Max 2027 exposes one class per emitter shape (probe 03g): `Free_Area`, `Target_Disc`,
+    `Free_Sphere`, … all share the same photometric properties as `Free_Light`. v1 keeps
+    the candela→W/sr conversion and approximates every shape as a point/spot; the physical
+    extent (`light_Width` / `light_length` / `light_Radius`) is not emitted yet and is
+    warned when the class is not the point form.
     """
     name = str(node.name)
     if not bool(node.on):
         return None
+
+    cls = str(rt.classOf(node))
+    if cls not in ("Free_Light", "Target_Light"):
+        ctx.warn(name,
+                 f"{cls} has a finite emitter shape; v1 approximates it as a point/spot "
+                 "and ignores light_Width/light_length/light_Radius")
 
     intensity_type = int(node.intensityType)
     if intensity_type != INTENSITY_TYPE_CANDELA:
@@ -232,7 +254,7 @@ def translate_photometric(node, ctx: LightContext) -> Light | None:
     provenance = PhotometricInfo(
         intensity_cd=intensity_cd,
         efficacy_lm_per_w=ctx.luminous_efficacy,
-        max_light_type=str(rt.classOf(node)),
+        max_light_type=cls,
     )
     to_world = _emission_frame(node, ctx.scene_scale_to_meters)
     radiance = split_rgb_preserving_luminance(watts, color)
@@ -278,11 +300,26 @@ def translate_light(node, ctx: LightContext) -> Light | None:
     Skipping rather than substituting, because there is no honest placeholder for a light:
     a guessed stand-in changes the whole image, whereas a missing one is obvious and
     correctly attributed by the warnings panel.
+
+    The on/off switch is `node.on` only. Photometric lights (`Free_Light`, `Target_Light`)
+    also expose an `enabled` property that defaults to **False** while the light is on
+    (probe 03d); treating that as the power switch silently dropped every photometric
+    light in the scene.
     """
+    import importlib
+
+    import max_side.lights as lights_mod
+
+    # Re-import is cheap and fixes the stale-registry case where `core` was reloaded but
+    # this module's decorator side effects did not run against the new LIGHTS object.
+    if len(LIGHTS) == 0:
+        importlib.reload(lights_mod)
+
     name = str(node.name)
-    if not bool(getattr(node, "on", True)):
-        return None
-    if not bool(getattr(node, "enabled", True)):
+    # Sun_Positioner has no `on`; default True so an unsupported class still reaches the
+    # warning path below rather than vanishing without a trace.
+    if hasattr(node, "on") and not bool(node.on):
+        ctx.warn(name, "light is off (node.on = false) and was skipped")
         return None
 
     cls = str(rt.classOf(node))

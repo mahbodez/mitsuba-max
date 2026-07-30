@@ -28,7 +28,7 @@ graphify-out/
 # Per-machine agent config. The graphify hooks in here carry an absolute path to one
 # developer's .local/bin, so this is personal wiring, not project state.
 .claude/
-
+.cursor/
 # Editor and OS noise.
 .vscode/
 .idea/

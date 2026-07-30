@@ -50,7 +50,7 @@ ignore = [
 # Probes are read-only scripts run inside Max. They print aligned columns with %-formatting
 # on purpose — an f-string with the same field widths is unreadable — and each query is
 # wrapped in a bare `except` so one failure cannot mask the rest of the probe.
-"tools/probes/*" = ["T201", "E501", "UP031", "BLE001"]
+"tools/probes/*" = ["T201", "E501", "UP031", "BLE001", "E402", "I001", "RUF015"]
 "tools/maxbatch.py" = ["UP031"]
 
 [tool.mypy]

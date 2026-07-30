@@ -19,6 +19,14 @@ body or a `try` block. Dr.Jit's native DLLs conflict with Max's loaded libraries
 > or not at all; a bare `import numpy` at module scope will fail on a machine where the
 > environment wizard has not been run.
 
+`ensure_numpy()` must be called **before** importing any module that reaches `core.film`,
+`core.tonemap` or `max_side.exr` — that means before `max_side.client` and `max_side.ui`,
+both of which import them at module scope. `max_side.render()` does this, after the
+environment wizard has had its chance to run; a new entry point that imports the client or
+the UI has to do the same, and function-level imports in `__init__.py` are what make the
+ordering expressible at all. Getting it wrong produces a bare `ModuleNotFoundError` from a
+file three packages down instead of the wizard instructions.
+
 Do not pip-install PySide6 anywhere. Max provides its own custom build and a second copy
 in `site-packages` breaks it.
 
