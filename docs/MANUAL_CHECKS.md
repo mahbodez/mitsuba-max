@@ -93,6 +93,16 @@ invisible, the benefit is invisible.
 pass counter does not move.
 **Paste:** nothing; just confirm it is instant rather than a second's pause.
 
+### M0-9 · One worker process across re-renders
+**Do:** open Task Manager, filter for `python.exe` under
+`%LOCALAPPDATA%\mitsuba-max\venv`. Render once, note the PID. Render two more times
+without closing Max.
+**Check:** still exactly one such process, and its PID is unchanged. VRAM usage on the GPU
+does not climb by a full context per click.
+**Paste:** the three PIDs (they should be identical).
+**Why:** a prior bug started a new worker on every Render and never shut the old one down,
+so three clicks meant three CUDA contexts.
+
 ---
 
 ## M2 — materials

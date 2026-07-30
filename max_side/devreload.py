@@ -43,6 +43,11 @@ def reload():
     Closes any live `RenderWindow` first: a widget whose class object has been replaced
     still runs, but its `isinstance` checks against the new classes will not, and its
     keep-alive would otherwise pin the old module's objects across the purge.
+
+    Also shuts down the shared worker before the purge. The singleton lives in
+    `max_side.client`; deleting that module without `shutdown` would orphan the process
+    with its CUDA context still holding VRAM — the same leak `shared_worker` exists to
+    prevent.
     """
     ui = sys.modules.get("max_side.ui")
     if ui is not None:
@@ -52,6 +57,11 @@ def reload():
             active.close()
         if callable(release):
             release()
+    client = sys.modules.get("max_side.client")
+    if client is not None:
+        shutdown = getattr(client, "shutdown_shared", None)
+        if callable(shutdown):
+            shutdown()
     removed = purge()
     module = importlib.import_module("max_side")
     print(f"[mitsuba-max] reloaded, purged {len(removed)} modules")

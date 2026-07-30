@@ -66,11 +66,17 @@ while Qt still owns the C++ dialog and its `QTimer` — and Max reports that as
 
 
 def retain(window: "RenderWindow") -> "RenderWindow":
-    """Keep `window` alive after the caller returns. Closes any previous dialog."""
+    """Keep `window` alive after the caller returns. Closes any previous dialog.
+
+    Reassigns `_active` *before* closing the previous dialog so `closeEvent` can tell a
+    replace-by-re-render apart from a user close. The shared worker stays up either way —
+    one process per Max session, not per click.
+    """
     global _active
-    if _active is not None and _active is not window:
-        _active.close()
+    previous = _active
     _active = window
+    if previous is not None and previous is not window:
+        previous.close()
     return window
 
 
@@ -196,6 +202,11 @@ class RenderWindow(QtWidgets.QDialog):
         self._timer.timeout.connect(self._tick)
         self._timer.start()
 
+        # Reusing a live worker means `ready` already happened; there will be no second
+        # event for this window to catch.
+        if client.ready is not None:
+            self._apply_ready(client.ready)
+
     # -- construction ------------------------------------------------------------------
 
     def _build_ui(self) -> None:
@@ -295,6 +306,8 @@ class RenderWindow(QtWidgets.QDialog):
         self._progress.setValue(0)
         self._cancel.setEnabled(True)
         self._status.setText("submitting…")
+        if self._client.ready is not None:
+            self._apply_ready(self._client.ready)
         try:
             self._job = self._client.submit(scene, film_path=film_path,
                                             scene_root=scene_root)
@@ -331,34 +344,39 @@ class RenderWindow(QtWidgets.QDialog):
         for event in events:
             match event:
                 case p.Ready():
-                    self._env_label.setText(
-                        f"Mitsuba {event.mitsuba}  ·  variant {event.variant}"
-                        + (f"  ·  scene scale {self._scene.scene_scale_to_meters:g} m/unit"
-                           if self._scene else "")
-                    )
-                    self.setWindowTitle(f"Mitsuba — {event.variant}")
-                case p.PassEv():
+                    self._apply_ready(event)
+                case p.PassEv() if event.job == self._job:
                     self._progress.setValue(event.index)
                     self._status.setText(
                         f"pass {event.index}  ·  {event.spp_done} spp  ·  "
                         f"{event.elapsed_s:.1f} s"
                     )
                     repaint = True
-                case p.Done():
+                case p.Done() if event.job == self._job:
                     self._cancel.setEnabled(False)
                     verb = "cancelled" if event.cancelled else "done"
                     self._status.setText(
                         f"{verb}  ·  {event.spp_done} spp  ·  {event.elapsed_s:.1f} s"
                     )
                     repaint = True
-                case p.ErrorEv():
+                case p.ErrorEv() if event.job is None or event.job == self._job:
                     self._fail(f"{event.message}\n\n{event.traceback}")
                     return
                 case p.LogEv():
                     self._status.setText(event.message)
+                case _:
+                    pass  # stale events from a cancelled predecessor job
 
         if repaint:
             self._refresh_buffer()
+
+    def _apply_ready(self, event: p.Ready) -> None:
+        self._env_label.setText(
+            f"Mitsuba {event.mitsuba}  ·  variant {event.variant}"
+            + (f"  ·  scene scale {self._scene.scene_scale_to_meters:g} m/unit"
+               if self._scene else "")
+        )
+        self.setWindowTitle(f"Mitsuba — {event.variant}")
 
     def _refresh_buffer(self) -> None:
         got = self._client.read_film()

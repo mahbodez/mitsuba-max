@@ -62,7 +62,7 @@ def export_only(*, selection_only: bool = False):
 
 
 def render(*, selection_only: bool = False):
-    """Export, start the worker if needed, and open the render window.
+    """Export, reuse the session worker (starting it if needed), and open the render window.
 
     The window is retained in `max_side.ui` so the menu macroscript — which discards the
     return value of `python.execute` — does not let CPython collect a live Qt dialog.
@@ -83,15 +83,13 @@ def render(*, selection_only: bool = False):
     # fails with a bare ModuleNotFoundError instead of the wizard instructions below.
     ensure_numpy(Path(settings.interpreter) if settings.interpreter else None)
 
-    from max_side.client import WorkerClient
+    from max_side.client import shared_worker
     from max_side.ui import RenderWindow, retain
 
     result = export_only(selection_only=selection_only)
 
     env_setup.write_project_pth(settings.interpreter, PROJECT_ROOT)
-    client = WorkerClient(interpreter=settings.interpreter, project_root=PROJECT_ROOT,
-                          variant=settings.variant)
-    client.start()
+    client = shared_worker(settings.interpreter, PROJECT_ROOT, variant=settings.variant)
 
     # retain() is load-bearing for the menu button: see max_side.ui._active.
     window = retain(RenderWindow(client, settings))

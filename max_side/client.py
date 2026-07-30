@@ -25,14 +25,54 @@ from core import protocol as p
 from core.emit_dict import scene_to_dict
 from core.ir import Scene
 
-__all__ = ["WorkerClient", "WorkerCrashed"]
+__all__ = ["WorkerClient", "WorkerCrashed", "shared_worker", "shutdown_shared"]
 
 _CREATE_NO_WINDOW = 0x08000000
 _STDERR_TAIL = 400
 
+_shared: "WorkerClient | None" = None
+"""Session-scoped worker. One process, many jobs — see `shared_worker`."""
+
 
 class WorkerCrashed(RuntimeError):
     """The worker exited without being asked to. Carries the exit code and stderr tail."""
+
+
+def shared_worker(interpreter: str, project_root: Path, *,
+                  variant: str = "auto") -> "WorkerClient":
+    """Return the live worker, starting one if needed.
+
+    `render()` used to construct a fresh `WorkerClient` on every click. Each call left the
+    previous process running with its CUDA context still resident, so a few renders filled
+    VRAM. The design was always one worker per Max session (see `docs/PERFORMANCE.md`);
+    this is that design, not a new policy.
+    """
+    global _shared
+    root = project_root.resolve()
+    if _shared is not None:
+        same = (
+            _shared.interpreter == interpreter
+            and _shared.project_root.resolve() == root
+            and _shared.variant == variant
+        )
+        if same and _shared.is_running:
+            return _shared
+        _shared.shutdown()
+        _shared = None
+
+    client = WorkerClient(interpreter=interpreter, project_root=root, variant=variant)
+    client.start()
+    _shared = client
+    return client
+
+
+def shutdown_shared(*, timeout: float = 5.0) -> None:
+    """Tear down the session worker. Safe when none exists. Used by reload, not by the UI."""
+    global _shared
+    if _shared is None:
+        return
+    _shared.shutdown(timeout=timeout)
+    _shared = None
 
 
 @dataclass
@@ -41,7 +81,8 @@ class WorkerClient:
 
     One worker serves many jobs. Restarting it per render would add a CUDA context
     initialisation — several seconds — to every single render, which is exactly the latency
-    the progressive display is trying to hide.
+    the progressive display is trying to hide. Prefer `shared_worker` over constructing
+    this directly from the Max UI path.
     """
 
     interpreter: str
@@ -178,6 +219,12 @@ class WorkerClient:
         """
         if not self.is_running:
             raise WorkerCrashed(self.crash_report())
+
+        # A second Render click must not leave the previous job finishing in the
+        # background while a new one queues behind it — that doubles peak VRAM briefly
+        # and feeds the wrong pass events into the new window.
+        if self.active_job is not None:
+            self.cancel(self.active_job)
 
         job = self.next_job
         self.next_job += 1
